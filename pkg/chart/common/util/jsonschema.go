@@ -67,7 +67,7 @@ func newHTTPURLLoader() *HTTPURLLoader {
 		Timeout: 15 * time.Second,
 		Transport: &http.Transport{
 			Proxy:           http.ProxyFromEnvironment,
-			TLSClientConfig: &tls.Config{},
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS13},
 		},
 	})
 	return &httpLoader
