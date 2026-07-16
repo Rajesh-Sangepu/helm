@@ -31,7 +31,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"text/template"
+	"html/template"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
