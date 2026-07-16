@@ -205,6 +205,10 @@ func (r *SubprocessPluginRuntime) InvokeHook(event string) error {
 		return err
 	}
 
+	if err := validatePluginArgs(argv); err != nil {
+		return err
+	}
+
 	cmd := exec.CommandContext(context.Background(), cleanMain, argv...)
 	cmd.Env = FormatEnv(env)
 	cmd.Stdout = os.Stdout
