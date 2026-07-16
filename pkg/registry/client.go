@@ -319,7 +319,7 @@ func ensureTLSConfig(client *auth.Client, setConfig *tls.Config) (*tls.Config, e
 	case setConfig != nil:
 		transport.TLSClientConfig = setConfig
 	case transport.TLSClientConfig == nil:
-		transport.TLSClientConfig = &tls.Config{}
+		transport.TLSClientConfig = &tls.Config{MinVersion: tls.VersionTLS13}
 	}
 
 	return transport.TLSClientConfig, nil
