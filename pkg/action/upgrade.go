@@ -474,7 +474,11 @@ func (u *Upgrade) releasingUpgrade(c chan<- resultMessage, upgradedRelease *rele
 		kube.ClientUpdateOptionUpgradeClientSideFieldManager(upgradeClientSideFieldManager))
 	if err != nil {
 		u.cfg.recordRelease(originalRelease)
-		u.reportToPerformUpgrade(c, upgradedRelease, results.Created, err)
+		var created kube.ResourceList
+		if results != nil {
+			created = results.Created
+		}
+		u.reportToPerformUpgrade(c, upgradedRelease, created, err)
 		return
 	}
 
