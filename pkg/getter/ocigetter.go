@@ -133,7 +133,7 @@ func (g *OCIGetter) newRegistryClient() (*registry.Client, error) {
 			Proxy:                 http.ProxyFromEnvironment,
 			// Being nil would cause the tls.Config default to be used
 			// "NewTLSConfig" modifies an empty TLS config, not the default one
-			TLSClientConfig: &tls.Config{},
+			TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS13},
 		}
 	})
 
