@@ -111,30 +111,42 @@ func (r *SubprocessPluginRuntime) Invoke(ctx context.Context, input *Input) (*Ou
 	}
 }
 
-// InvokeWithEnv executes a plugin command with custom environment and I/O streams
-// This method allows execution with different command/args than the plugin's default
-func (r *SubprocessPluginRuntime) InvokeWithEnv(main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	// Validate that main is an absolute path to prevent shell injection via
-	// relative paths or paths containing shell metacharacters.
+// validatePluginCommand validates that a plugin command path is safe to execute.
+// It ensures the path is absolute, resides within the plugin directory, and is a regular file.
+// It returns the cleaned, validated path or an error.
+func (r *SubprocessPluginRuntime) validatePluginCommand(main string) (string, error) {
+	// Require an absolute path to prevent shell injection via relative paths
+	// or paths containing shell metacharacters.
 	if !filepath.IsAbs(main) {
-		return fmt.Errorf("plugin command must be an absolute path, got: %q", main)
+		return "", fmt.Errorf("plugin command must be an absolute path, got: %q", main)
 	}
 
-	// Resolve any symlinks and clean the path, then ensure it stays within
-	// the plugin directory to prevent path-traversal attacks.
+	// Clean the path and ensure it stays within the plugin directory to
+	// prevent path-traversal attacks.
 	cleanMain := filepath.Clean(main)
 	pluginDir := filepath.Clean(r.pluginDir)
 	if !strings.HasPrefix(cleanMain, pluginDir+string(filepath.Separator)) {
-		return fmt.Errorf("plugin command %q must reside within the plugin directory %q", cleanMain, pluginDir)
+		return "", fmt.Errorf("plugin command %q must reside within the plugin directory %q", cleanMain, pluginDir)
 	}
 
 	// Confirm the resolved path is a regular file (not a directory or missing).
 	info, err := os.Stat(cleanMain)
 	if err != nil {
-		return fmt.Errorf("plugin command not accessible: %w", err)
+		return "", fmt.Errorf("plugin command not accessible: %w", err)
 	}
 	if !info.Mode().IsRegular() {
-		return fmt.Errorf("plugin command %q is not a regular file", cleanMain)
+		return "", fmt.Errorf("plugin command %q is not a regular file", cleanMain)
+	}
+
+	return cleanMain, nil
+}
+
+// InvokeWithEnv executes a plugin command with custom environment and I/O streams
+// This method allows execution with different command/args than the plugin's default
+func (r *SubprocessPluginRuntime) InvokeWithEnv(main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
+	cleanMain, err := r.validatePluginCommand(main)
+	if err != nil {
+		return err
 	}
 
 	cmd := exec.CommandContext(context.Background(), cleanMain, argv...)
@@ -169,7 +181,12 @@ func (r *SubprocessPluginRuntime) InvokeHook(event string) error {
 		return err
 	}
 
-	cmd := exec.CommandContext(context.Background(), main, argv...)
+	cleanMain, err := r.validatePluginCommand(main)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(context.Background(), cleanMain, argv...)
 	cmd.Env = FormatEnv(env)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -229,7 +246,12 @@ func (r *SubprocessPluginRuntime) runCLI(ctx context.Context, input *Input) (*Ou
 		return nil, fmt.Errorf("failed to prepare plugin command: %w", err)
 	}
 
-	cmd := exec.CommandContext(ctx, command, args...)
+	cleanCommand, err := r.validatePluginCommand(command)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.CommandContext(ctx, cleanCommand, args...)
 	cmd.Env = FormatEnv(env)
 
 	cmd.Stdin = input.Stdin
@@ -264,9 +286,14 @@ func (r *SubprocessPluginRuntime) runPostrenderer(ctx context.Context, input *In
 		return nil, fmt.Errorf("failed to prepare plugin command: %w", err)
 	}
 
+	cleanCommand, err := r.validatePluginCommand(command)
+	if err != nil {
+		return nil, err
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
-		command,
+		cleanCommand,
 		args...)
 
 	stdin, err := cmd.StdinPipe()
