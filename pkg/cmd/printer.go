@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"io"
-	"text/template"
+	"html/template"
 )
 
 func tpl(t string, vals map[string]any, out io.Writer) error {
