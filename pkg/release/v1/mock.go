@@ -17,7 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -57,7 +58,8 @@ func Mock(opts *MockReleaseOptions) *Release {
 
 	name := opts.Name
 	if name == "" {
-		name = "testrelease-" + strconv.Itoa(rand.Intn(100))
+		n, _ := rand.Int(rand.Reader, big.NewInt(100))
+		name = "testrelease-" + strconv.FormatInt(n.Int64(), 10)
 	}
 
 	version := 1
