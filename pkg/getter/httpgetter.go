@@ -156,7 +156,7 @@ func (g *HTTPGetter) httpClient(opts getterOptions) (*http.Client, error) {
 		g.transport = &http.Transport{
 			DisableCompression: true,
 			Proxy:              http.ProxyFromEnvironment,
-			TLSClientConfig:    &tls.Config{},
+			TLSClientConfig:    &tls.Config{MinVersion: tls.VersionTLS13},
 		}
 	})
 
