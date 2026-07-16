@@ -165,9 +165,18 @@ func (g *TarGzExtractor) Extract(buffer *bytes.Buffer, targetDir string) error {
 			if err != nil {
 				return err
 			}
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+			// Use io.CopyN with header.Size+1 to guard against decompression bombs.
+			// Copying one byte beyond the declared size lets us detect archives that
+			// lie about their content length; if more bytes than declared are present
+			// we treat the archive as malicious and abort.
+			written, err := io.CopyN(outFile, tarReader, header.Size+1)
+			if err != nil && !errors.Is(err, io.EOF) {
 				outFile.Close()
 				return err
+			}
+			if written > header.Size {
+				outFile.Close()
+				return fmt.Errorf("archive entry %q exceeds its declared size; possible decompression bomb", header.Name)
 			}
 			outFile.Close()
 		// We don't want to process these extension header files.
