@@ -371,7 +371,7 @@ func pluginDynamicComp(plug plugin.Plugin, cmd *cobra.Command, args []string, to
 	}
 
 	// For subprocess runtime, use InvokeWithEnv for dynamic completion
-	if err := subprocessPlug.InvokeWithEnv(main, argv, env, nil, buf, buf); err != nil {
+	if err := subprocessPlug.InvokeWithEnv(cmd.Context(), main, argv, env, nil, buf, buf); err != nil {
 		// The dynamic completion file is optional for a plugin, so this error is ok.
 		cobra.CompDebugln(fmt.Sprintf("Unable to call %s: %v", main, err.Error()), settings.Debug)
 		return nil, cobra.ShellCompDirectiveDefault
