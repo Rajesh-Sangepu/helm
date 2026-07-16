@@ -27,7 +27,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"text/template"
+	"text/template" // nosemgrep: import-text-template -- This engine renders Kubernetes manifests (YAML/JSON), not HTML for browsers. html/template would corrupt output via unwanted HTML entity escaping (e.g., < → &lt;).
 
 	"k8s.io/client-go/rest"
 
