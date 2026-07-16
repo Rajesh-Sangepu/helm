@@ -24,7 +24,9 @@ import (
 	"maps"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
+	"strings"
 
 	"helm.sh/helm/v4/internal/plugin/schema"
 )
@@ -112,7 +114,30 @@ func (r *SubprocessPluginRuntime) Invoke(ctx context.Context, input *Input) (*Ou
 // InvokeWithEnv executes a plugin command with custom environment and I/O streams
 // This method allows execution with different command/args than the plugin's default
 func (r *SubprocessPluginRuntime) InvokeWithEnv(main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	cmd := exec.CommandContext(context.Background(), main, argv...)
+	// Validate that main is an absolute path to prevent shell injection via
+	// relative paths or paths containing shell metacharacters.
+	if !filepath.IsAbs(main) {
+		return fmt.Errorf("plugin command must be an absolute path, got: %q", main)
+	}
+
+	// Resolve any symlinks and clean the path, then ensure it stays within
+	// the plugin directory to prevent path-traversal attacks.
+	cleanMain := filepath.Clean(main)
+	pluginDir := filepath.Clean(r.pluginDir)
+	if !strings.HasPrefix(cleanMain, pluginDir+string(filepath.Separator)) {
+		return fmt.Errorf("plugin command %q must reside within the plugin directory %q", cleanMain, pluginDir)
+	}
+
+	// Confirm the resolved path is a regular file (not a directory or missing).
+	info, err := os.Stat(cleanMain)
+	if err != nil {
+		return fmt.Errorf("plugin command not accessible: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("plugin command %q is not a regular file", cleanMain)
+	}
+
+	cmd := exec.CommandContext(context.Background(), cleanMain, argv...)
 	cmd.Env = slices.Clone(os.Environ())
 	cmd.Env = append(
 		cmd.Env,
