@@ -98,6 +98,7 @@ func NewTLSConfig(options ...TLSConfigOption) (*tls.Config, error) {
 
 	config := tls.Config{
 		InsecureSkipVerify: to.insecureSkipTLSVerify,
+		MinVersion:         tls.VersionTLS13,
 	}
 
 	if len(to.certPEMBlock) > 0 && len(to.keyPEMBlock) > 0 {
