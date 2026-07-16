@@ -30,7 +30,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"text/template"
+	"html/template"
 	"time"
 
 	"github.com/Masterminds/sprig/v3"
