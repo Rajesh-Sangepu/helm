@@ -318,6 +318,10 @@ func (r *SubprocessPluginRuntime) runPostrenderer(ctx context.Context, input *In
 		return nil, err
 	}
 
+	if err := validatePluginArgs(args); err != nil {
+		return nil, err
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
 		cleanCommand,
