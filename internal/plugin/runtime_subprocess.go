@@ -274,6 +274,10 @@ func (r *SubprocessPluginRuntime) runCLI(ctx context.Context, input *Input) (*Ou
 		return nil, err
 	}
 
+	if err := validatePluginArgs(args); err != nil {
+		return nil, err
+	}
+
 	cmd := exec.CommandContext(ctx, cleanCommand, args...)
 	cmd.Env = FormatEnv(env)
 
