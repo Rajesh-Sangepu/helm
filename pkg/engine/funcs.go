@@ -26,7 +26,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"text/template"
+	"text/template" // nosemgrep: import-text-template -- This engine renders Kubernetes manifests (YAML/JSON), not HTML for browsers. html/template would corrupt output via unwanted HTML entity escaping (e.g., < → &lt;).
 	"time"
 
 	"github.com/BurntSushi/toml"
