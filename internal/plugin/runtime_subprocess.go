@@ -112,8 +112,7 @@ func (r *SubprocessPluginRuntime) Invoke(ctx context.Context, input *Input) (*Ou
 // InvokeWithEnv executes a plugin command with custom environment and I/O streams
 // This method allows execution with different command/args than the plugin's default
 func (r *SubprocessPluginRuntime) InvokeWithEnv(main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
-	mainCmdExp := os.ExpandEnv(main)
-	cmd := exec.CommandContext(context.Background(), mainCmdExp, argv...)
+	cmd := exec.CommandContext(context.Background(), main, argv...)
 	cmd.Env = slices.Clone(os.Environ())
 	cmd.Env = append(
 		cmd.Env,
