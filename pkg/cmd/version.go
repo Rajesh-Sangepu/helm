@@ -19,7 +19,7 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"text/template"
+	"html/template"
 
 	"github.com/spf13/cobra"
 
