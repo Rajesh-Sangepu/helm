@@ -82,9 +82,18 @@ func (r *SubprocessPluginRuntime) runGetter(ctx context.Context, input *Input) (
 	buf := bytes.Buffer{} // subprocess getters are expected to write content to stdout
 
 	pluginCommand := filepath.Join(r.pluginDir, command)
+	cleanCommand, err := r.validatePluginCommand(pluginCommand)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := validatePluginArgs(args); err != nil {
+		return nil, err
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
-		pluginCommand,
+		cleanCommand,
 		args...)
 	cmd.Env = FormatEnv(env)
 	cmd.Stdout = &buf
