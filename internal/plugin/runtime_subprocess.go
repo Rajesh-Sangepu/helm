@@ -141,15 +141,34 @@ func (r *SubprocessPluginRuntime) validatePluginCommand(main string) (string, er
 	return cleanMain, nil
 }
 
+// validatePluginArgs checks that each argument in argv is a non-empty string and
+// does not begin with a filesystem separator, preventing hidden path or flag injection
+// via arguments that look like absolute paths.
+func validatePluginArgs(argv []string) error {
+	for i, arg := range argv {
+		if arg == "" {
+			return fmt.Errorf("plugin argument at index %d must not be empty", i)
+		}
+		if strings.HasPrefix(arg, string(filepath.Separator)) {
+			return fmt.Errorf("plugin argument at index %d must not be an absolute path: %q", i, arg)
+		}
+	}
+	return nil
+}
+
 // InvokeWithEnv executes a plugin command with custom environment and I/O streams
 // This method allows execution with different command/args than the plugin's default
-func (r *SubprocessPluginRuntime) InvokeWithEnv(main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
+func (r *SubprocessPluginRuntime) InvokeWithEnv(ctx context.Context, main string, argv []string, env []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	cleanMain, err := r.validatePluginCommand(main)
 	if err != nil {
 		return err
 	}
 
-	cmd := exec.CommandContext(context.Background(), cleanMain, argv...)
+	if err := validatePluginArgs(argv); err != nil {
+		return err
+	}
+
+	cmd := exec.CommandContext(ctx, cleanMain, argv...)
 	cmd.Env = slices.Clone(os.Environ())
 	cmd.Env = append(
 		cmd.Env,
