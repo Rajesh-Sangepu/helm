@@ -132,9 +132,7 @@ func LoadArchiveFiles(in io.Reader) ([]*BufferedFile, error) {
 			return nil, fmt.Errorf("decompressed chart file %q is larger than the maximum file size %d", hd.Name, MaxDecompressedFileSize)
 		}
 
-		limitedReader := io.LimitReader(tr, remainingSize)
-
-		bytesWritten, err := io.Copy(b, limitedReader)
+		bytesWritten, err := io.CopyN(b, tr, remainingSize)
 		if err != nil {
 			return nil, err
 		}
