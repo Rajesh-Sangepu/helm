@@ -243,8 +243,16 @@ func extractTar(r io.Reader, targetDir string) error {
 				return err
 			}
 			defer outFile.Close()
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+			// Limit bytes read to the declared header size + 1 to guard against
+			// decompression bomb (zip/tar bomb) DoS attacks. Reading one byte
+			// beyond the declared size lets us detect content that exceeds what
+			// the header advertises, which is itself a sign of a malicious archive.
+			written, err := io.CopyN(outFile, tarReader, header.Size+1)
+			if err != nil && !errors.Is(err, io.EOF) {
 				return err
+			}
+			if written > header.Size {
+				return fmt.Errorf("tar entry %q exceeds its declared size and may be a decompression bomb", header.Name)
 			}
 		case tar.TypeXGlobalHeader, tar.TypeXHeader:
 			// Skip these
